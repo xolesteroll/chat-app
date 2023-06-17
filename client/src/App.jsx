@@ -17,10 +17,6 @@ function App() {
     }
   };
 
-  const disconnectChat = () => {
-    socket.disconnect();
-  };
-
   return (
     <div className="App">
       {!showChat ? (
@@ -37,7 +33,6 @@ function App() {
             onChange={(e) => setRoomId(e.target.value)}
           />
           <button onClick={joinRoom}>Join room</button>
-          <button onClick={disconnectChat}>Exit</button>
         </div>
       ) : (
         <Chat socket={socket} userName={userName} roomId={roomId} />

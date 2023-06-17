@@ -4,6 +4,13 @@ function Chat({ socket, userName, roomId }) {
   const [msg, setMsg] = useState("");
   const [msgList, setMsgList] = useState([]);
 
+  useEffect(() => {
+    socket.on("receiveMsg", (data) => {
+      console.log(msgList);
+      setMsgList((msgList) => [...msgList, data]);
+    });
+  }, [socket]);
+
   const sendMsg = () => {
     if (msg.length) {
       const msgData = {
@@ -14,15 +21,13 @@ function Chat({ socket, userName, roomId }) {
       };
 
       socket.emit("sendMsg", msgData);
+      setMsgList((msgList) => [...msgList, msgData]);
     }
   };
 
-  useEffect(() => {
-    socket.on("receiveMsg", (data) => {
-      console.log(msgList);
-      setMsgList((msgList) => [...msgList, data.msg]);
-    });
-  }, [socket]);
+  const disconnectChat = () => {
+    socket.disconnect();
+  };
 
   return (
     <div className="chat-window ">
@@ -31,8 +36,20 @@ function Chat({ socket, userName, roomId }) {
       </div>
       <div className="chat-body">
         <ul className="message-list">
-          {msgList.map((msg) => (
-            <li key={msg + Math.random()}>{msg}</li>
+          {msgList.map((msgData) => (
+            <li className="message" key={msgData.msg + Math.random()}>
+              <span className="message-content">
+                {msgData.msg}
+              </span>
+              <span className="message-meta">
+                <p>
+                  {msgData.time}
+                </p>
+                <p>
+                  {msgData.author}
+                </p>
+              </span>
+            </li>
           ))}
         </ul>
       </div>
@@ -45,6 +62,7 @@ function Chat({ socket, userName, roomId }) {
       </div>
 
       <button onClick={sendMsg}>Send</button>
+      <button onClick={disconnectChat}>Exit</button>
     </div>
   );
 }
