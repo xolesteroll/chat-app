@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-function Chat({ socket, userName, roomId }) {
+function Chat({ socket, userName, chatId, exit }) {
   const [msg, setMsg] = useState("");
   const [msgList, setMsgList] = useState([]);
 
@@ -14,7 +14,7 @@ function Chat({ socket, userName, roomId }) {
   const sendMsg = () => {
     if (msg.length) {
       const msgData = {
-        roomId,
+        chatId,
         author: userName,
         time: `${new Date().getHours()}:${new Date().getMinutes()}`,
         msg: msg,
@@ -27,6 +27,7 @@ function Chat({ socket, userName, roomId }) {
 
   const disconnectChat = () => {
     socket.disconnect();
+    exit()
   };
 
   return (
