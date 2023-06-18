@@ -4,11 +4,9 @@ function Chat({ socket, userName, chatId, exit }) {
   const [msg, setMsg] = useState("");
   const [msgList, setMsgList] = useState([]);
 
-  console.log(chatId)
-
   useEffect(() => {
-    socket.on("receiveMsg", (data) => {
-      console.log(msgList);
+    socket.on("messageReceived", (data) => {
+      console.log(data)
       setMsgList((msgList) => [...msgList, data]);
     });
 
@@ -16,26 +14,37 @@ function Chat({ socket, userName, chatId, exit }) {
       console.log(messages)
       setMsgList((msgList) => [...msgList, ...messages]);
     })
-  }, [socket]);
+
+  }, []);
+  
 
   const sendMsg = async () => {
-    if (msg.length) {
-      const msgData = {
-        chatId,
-        author: userName,
-        time: `${new Date().getHours()}:${new Date().getMinutes()}`,
-        msg: msg,
-      };
-
-      await socket.emit("sendMsg", msgData);
-      setMsgList((msgList) => [...msgList, msgData]);
+    try {
+      if (msg.length) {
+        const msgData = {
+          chatId,
+          author: userName,
+          time: new Date().toISOString(),
+          msg: msg,
+        };
+  
+        await socket.emit("sendMsg", msgData);
+        setMsgList((msgList) => [...msgList, msgData]);
+      }
+    } catch (e) {
+      console.log(e)
     }
+    
   };
 
   const disconnectChat = () => {
     socket.disconnect();
     exit()
   };
+
+  const transformDateToTime = (date) => {
+    return new Date(date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  }
 
   return (
     <div className="chat-window ">
@@ -45,13 +54,13 @@ function Chat({ socket, userName, chatId, exit }) {
       <div className="chat-body">
         <ul className="message-list">
           {msgList.map((msgData) => (
-            <li className="message" key={(msgData.msg || msgData.content) + Math.random()}>
+            <li className="message" key={(msgData.id) + Math.random()}>
               <span className="message-content">
                 {(msgData.msg || msgData.content)}
               </span>
               <span className="message-meta">
                 <p>
-                  {msgData.time}
+                  {transformDateToTime(msgData.time)}
                 </p>
                 <p>
                   {msgData.author}

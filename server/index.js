@@ -27,30 +27,39 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", async ({ chatId, userName }) => {
-    console.log("joined rookl");
     const chat = await ChatService.createChat(socket, chatId, userName);
-    const messages = await chat.getMessages();
-    await User.findOrCreate({where: {name: userName}, defaults: {name: userName}})
-    console.log(messages)
-    socket.join(chatId);
-    console.log(`${socket.id} Joined the room: ${chatId}`);
+    const messagesData = await chat.getMessages();
+
+    const messages = messagesData.map( (m) => {
+      return {
+        id: m.id,
+        chatId: m.chatId,
+        author: m.senderName,
+        msg: m.content,
+        time: m.createdAt
+      }
+    })
+
     socket.emit('fetchedData', messages)
 
   });
 
   socket.on("sendMsg", async (data) => {
-    console.log(data);
-    const sender = await User.findOrCreate({ where: { name: data.author } });
-    const senderId = sender.id;
-    const chatId = data.chatId;
+    try {
+      const sender = await User.findOrCreate({ where: { name: data.author } });
+      const senderId = sender.id;
+      const chatId = data.chatId;
+  
+      const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
+      const newMessage = await Message.create({content: data.msg, type: 'text', senderId, senderName: data.author})
+      
+      socket.to(data.chatId).emit("messageReceived", data);
+      await ChatService.addMessageToChat(chat, newMessage)
+      console.log(data)
 
-    const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
-    console.log(data.msg);
-
-    const newMessage = await Message.create({content: data.msg, type: 'text', senderId})
-    
-    await ChatService.addMessageToChat(chat, newMessage)
-    socket.to(data.chatId).emit("receiveMsg", data);
+    } catch (e) {
+      console.log(e)
+    }
   });
 
   socket.on("disconnect", () => {

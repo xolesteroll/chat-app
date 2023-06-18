@@ -39,8 +39,12 @@ const Message = sequelize.define("Message", {
     autoIncrement: true,
   },
   content: {
-    type: DataTypes.TEXT,
+    type: DataTypes.STRING,
     allowNull: false,
+  },
+  senderName: {
+    type: DataTypes.STRING,
+    allowNull: false
   },
   type: {
     type: DataTypes.ENUM("text", "file"),
