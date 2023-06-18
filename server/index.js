@@ -6,11 +6,12 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const db = require("./db");
 
-const {Chat} = require("./models");
-const {User} = require("./models");
-const ChatController = require("./controllers/ChatController");
+const { Chat } = require("./models");
+const { User } = require("./models");
+const ChatService = require("./services/ChatService");
+const MessagesService = require("./services/MessageService");
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 
@@ -24,17 +25,21 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-
   socket.on("joinRoom", async ({ chatId, userName }) => {
-    console.log('joined rookl')
-    // await ChatController.createChat(socket, chatId, userName)
- 
+    console.log("joined rookl");
+    await ChatService.createChat(socket, chatId, userName);
+
     socket.join(chatId);
     console.log(`${socket.id} Joined the room: ${chatId}`);
   });
 
-  socket.on("sendMsg", (data) => {
+  socket.on("sendMsg", async (data) => {
     console.log(data);
+    const sender = await User.findOne({ where: { name: data.author } });
+    const senderId = sender.id;
+    const chatId = data.chatId;
+    console.log(data.msg);
+    await MessagesService.addNew("text", data.msg, senderId, chatId);
     socket.to(data.chatId).emit("receiveMsg", data);
   });
 
