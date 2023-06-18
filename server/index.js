@@ -27,7 +27,7 @@ io.on("connection", (socket) => {
 
   socket.on("joinRoom", async ({ chatId, userName }) => {
     console.log('joined rookl')
-    await ChatController.createChat(socket, chatId, userName)
+    // await ChatController.createChat(socket, chatId, userName)
  
     socket.join(chatId);
     console.log(`${socket.id} Joined the room: ${chatId}`);
@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
 
   socket.on("sendMsg", (data) => {
     console.log(data);
-    socket.to(data.roomId).emit("receiveMsg", data);
+    socket.to(data.chatId).emit("receiveMsg", data);
   });
 
   socket.on("disconnect", () => {

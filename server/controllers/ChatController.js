@@ -5,7 +5,6 @@ const createChat = async (socket, chatId, userName) => {
   try {
     const chat = await Chat.findOrCreate({
       where: { soketId: chatId },
-      defaults: { soketId: chatId },
     });
     const connectedUser = await User.findOrCreate({
       where: { name: userName },

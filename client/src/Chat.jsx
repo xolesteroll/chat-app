@@ -4,6 +4,8 @@ function Chat({ socket, userName, chatId, exit }) {
   const [msg, setMsg] = useState("");
   const [msgList, setMsgList] = useState([]);
 
+  console.log(chatId)
+
   useEffect(() => {
     socket.on("receiveMsg", (data) => {
       console.log(msgList);
@@ -11,7 +13,7 @@ function Chat({ socket, userName, chatId, exit }) {
     });
   }, [socket]);
 
-  const sendMsg = () => {
+  const sendMsg = async () => {
     if (msg.length) {
       const msgData = {
         chatId,
@@ -20,7 +22,7 @@ function Chat({ socket, userName, chatId, exit }) {
         msg: msg,
       };
 
-      socket.emit("sendMsg", msgData);
+      await socket.emit("sendMsg", msgData);
       setMsgList((msgList) => [...msgList, msgData]);
     }
   };
