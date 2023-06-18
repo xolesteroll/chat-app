@@ -30,15 +30,17 @@ io.on("connection", (socket) => {
     console.log("joined rookl");
     const chat = await ChatService.createChat(socket, chatId, userName);
     const messages = await chat.getMessages();
+    await User.findOrCreate({where: {name: userName}, defaults: {name: userName}})
     console.log(messages)
     socket.join(chatId);
     console.log(`${socket.id} Joined the room: ${chatId}`);
     socket.emit('fetchedData', messages)
+
   });
 
   socket.on("sendMsg", async (data) => {
     console.log(data);
-    const sender = await User.findOne({ where: { name: data.author } });
+    const sender = await User.findOrCreate({ where: { name: data.author } });
     const senderId = sender.id;
     const chatId = data.chatId;
 
