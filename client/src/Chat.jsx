@@ -11,6 +11,11 @@ function Chat({ socket, userName, chatId, exit }) {
       console.log(msgList);
       setMsgList((msgList) => [...msgList, data]);
     });
+
+    socket.on("fetchedData", (messages) => {
+      console.log(messages)
+      setMsgList((msgList) => [...msgList, ...messages]);
+    })
   }, [socket]);
 
   const sendMsg = async () => {
@@ -40,9 +45,9 @@ function Chat({ socket, userName, chatId, exit }) {
       <div className="chat-body">
         <ul className="message-list">
           {msgList.map((msgData) => (
-            <li className="message" key={msgData.msg + Math.random()}>
+            <li className="message" key={(msgData.msg || msgData.content) + Math.random()}>
               <span className="message-content">
-                {msgData.msg}
+                {(msgData.msg || msgData.content)}
               </span>
               <span className="message-meta">
                 <p>

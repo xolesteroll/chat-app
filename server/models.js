@@ -4,8 +4,8 @@ const { DataTypes } = require("sequelize");
 const User = sequelize.define("user", {
   id: {
     type: DataTypes.INTEGER,
-    primaryKey: true,
     autoIncrement: true,
+    primaryKey: true,
   },
   name: {
     type: DataTypes.STRING,
@@ -21,10 +21,15 @@ const User = sequelize.define("user", {
 
 const Chat = sequelize.define("Chat", {
   id: {
-    type: DataTypes.STRING,
+    type: DataTypes.INTEGER,
     primaryKey: true,
-    allowNull: false
+    autoIncrement: true,
+    allowNull: false,
   },
+  socketRoomId: {
+    type: DataTypes.STRING,
+    allowNull: false
+  }
 });
 
 const Message = sequelize.define("Message", {
@@ -49,17 +54,16 @@ const Message = sequelize.define("Message", {
     type: DataTypes.STRING,
     allowNull: true,
   },
-  
 });
 
-User.hasMany(Message, { foreignKey: "senderId" });
-User.belongsToMany(Chat, { through: "UserChat" });
 
+// Chat.belongsToMany(User, { through: 'UserChat' });
+// User.belongsToMany(Chat, { through: 'UserChat' });
 
-Chat.belongsToMany(User, { through: "UserChat" });
 Chat.hasMany(Message);
-
 Message.belongsTo(Chat);
+
+User.hasMany(Message, { foreignKey: "senderId" });
 Message.belongsTo(User);
 
 module.exports = {
