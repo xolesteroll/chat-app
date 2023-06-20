@@ -33,7 +33,7 @@ io.on("connection", (socket) => {
     const messages = messagesData.map( (m) => {
       return {
         id: m.id,
-        chatId: m.chatId,
+        chatId: +m.chatId,
         author: m.senderName,
         msg: m.content,
         time: m.createdAt
@@ -52,10 +52,10 @@ io.on("connection", (socket) => {
   
       const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
       const newMessage = await Message.create({content: data.msg, type: 'text', senderId, senderName: data.author})
+      console.log(data.chatId)
       
-      socket.to(data.chatId).emit("messageReceived", data);
+      socket.to(chatId).emit("messageReceived", data);
       await ChatService.addMessageToChat(chat, newMessage)
-      console.log(data)
 
     } catch (e) {
       console.log(e)
