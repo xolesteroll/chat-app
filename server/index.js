@@ -25,52 +25,55 @@ const io = new Server(server, {
   },
 });
 
-io.on("connection", (socket) => {
-  socket.on("joinRoom", async ({ chatId, userName }) => {
-    const chat = await ChatService.createChat(socket, chatId, userName);
-    const messagesData = await chat.getMessages();
 
-    const messages = messagesData.map( (m) => {
-      return {
-        id: m.id,
-        chatId: +m.chatId,
-        author: m.senderName,
-        msg: m.content,
-        time: m.createdAt
-      }
-    })
-
-    socket.emit('fetchedData', messages)
-
-  });
-
-  socket.on("sendMsg", async (data) => {
-    try {
-      const sender = await User.findOrCreate({ where: { name: data.author } });
-      const senderId = sender.id;
-      const chatId = data.chatId;
-  
-      const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
-      const newMessage = await Message.create({content: data.msg, type: 'text', senderId, senderName: data.author})
-      console.log(data.chatId)
-      
-      socket.to(chatId).emit("messageReceived", data);
-      await ChatService.addMessageToChat(chat, newMessage)
-
-    } catch (e) {
-      console.log(e)
-    }
-  });
-
-  socket.on("disconnect", () => {
-    console.log("user disconnected", socket.id);
-  });
-});
 
 server.listen(PORT, async () => {
   try {
     await db.authenticate();
     await db.sync();
+
+    io.on("connection", (socket) => {
+      socket.on("joinRoom", async ({ chatId, userName }) => {
+        const chat = await ChatService.createChat(socket, chatId, userName);
+        const messagesData = await chat.getMessages();
+    
+        const messages = messagesData.map( (m) => {
+          return {
+            id: m.id,
+            chatId: +m.chatId,
+            author: m.senderName,
+            msg: m.content,
+            time: m.createdAt
+          }
+        })
+    
+        socket.emit('fetchedData', messages)
+    
+      });
+    
+      socket.on("sendMsg", async (data) => {
+        try {
+          const sender = await User.findOrCreate({ where: { name: data.author } });
+          const senderId = sender.id;
+          const chatId = data.chatId;
+      
+          const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
+          const newMessage = await Message.create({content: data.msg, type: 'text', senderId, senderName: data.author})
+          console.log(data.chatId)
+          
+          socket.broadcast.emit("rcvMsg", data);
+          await ChatService.addMessageToChat(chat, newMessage)
+    
+        } catch (e) {
+          console.log(e)
+        }
+      });
+    
+      socket.on("disconnect", () => {
+        console.log("user disconnected", socket.id);
+      });
+    });
+
     console.log("server runnig");
   } catch (e) {
     console.log(e.message);

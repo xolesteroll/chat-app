@@ -5,8 +5,7 @@ function Chat({ socket, userName, chatId, exit }) {
   const [msgList, setMsgList] = useState([]);
 
   useEffect(() => {
-    socket.on("messageReceived", (data) => {
-      console.log(data)
+    socket.on("rcvMsg", (data) => {
       setMsgList((msgList) => [...msgList, data]);
     });
 
@@ -15,8 +14,7 @@ function Chat({ socket, userName, chatId, exit }) {
       setMsgList((msgList) => [...msgList, ...messages]);
     })
 
-  }, []);
-  
+  }, [socket]);
 
   const sendMsg = async () => {
     try {
@@ -54,7 +52,7 @@ function Chat({ socket, userName, chatId, exit }) {
       <div className="chat-body">
         <ul className="message-list">
           {msgList.map((msgData) => (
-            <li className="message" key={(msgData.id) + Math.random()}>
+            <li className="message" key={Math.random() + Math.random()}>
               <span className="message-content">
                 {(msgData.msg || msgData.content)}
               </span>
