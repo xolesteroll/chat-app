@@ -1,10 +1,13 @@
 require("dotenv").config();
+const { writeFileSync } = require("fs");
 const express = require("express");
 const app = express();
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const db = require("./db");
+
+const uuid = require("uuid")
 
 const { Chat } = require("./models");
 const { User } = require("./models");
@@ -25,8 +28,6 @@ const io = new Server(server, {
   },
 });
 
-
-
 server.listen(PORT, async () => {
   try {
     await db.authenticate();
@@ -41,6 +42,7 @@ server.listen(PORT, async () => {
           return {
             id: m.id,
             chatId: +m.chatId,
+            type: m.type,
             author: m.senderName,
             msg: m.content,
             time: m.createdAt
@@ -50,6 +52,17 @@ server.listen(PORT, async () => {
         socket.emit('fetchedData', messages)
     
       });
+
+      socket.on("upload", (files, callback) => {
+        console.log(files)
+        for (let key in files[0]) {
+          console.log(files[0][key])
+          const fileName = `file_${key}`
+          // writeFileSync("/uploads", files[0][key], (err) => {
+          //   callback({message: err ? "failure" : "success"})
+          // })
+        }
+      })
     
       socket.on("sendMsg", async (data) => {
         try {
@@ -58,7 +71,7 @@ server.listen(PORT, async () => {
           const chatId = data.chatId;
       
           const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
-          const newMessage = await Message.create({content: data.msg, type: 'text', senderId, senderName: data.author})
+          const newMessage = await Message.create({content: data.msg, type: data.type, senderId, senderName: data.author, chatId})
           console.log(data.chatId)
           
           socket.broadcast.emit("rcvMsg", data);

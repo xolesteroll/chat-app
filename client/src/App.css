@@ -118,6 +118,12 @@ ul,ol {
   word-break: break-word;
 }
 
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 #you {
   justify-content: flex-start;
 }
