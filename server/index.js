@@ -1,9 +1,10 @@
 require("dotenv").config();
+const path = require("path")
 const { writeFileSync } = require("fs");
 const express = require("express");
-const app = express();
 const http = require("http");
 const cors = require("cors");
+
 const { Server } = require("socket.io");
 const db = require("./db");
 
@@ -14,10 +15,15 @@ const { User } = require("./models");
 const { Message } = require("./models");
 const ChatService = require("./services/ChatService");
 const MessagesService = require("./services/MessageService");
+const upload = require("./services/FilesService");
 
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+const app = express();
+
+app.use(cors())
+app.use(express.json())
+app.use(express.static('uploads'))
 
 const server = http.createServer(app);
 
@@ -28,12 +34,22 @@ const io = new Server(server, {
   },
 });
 
+app.post('/upload-files', upload.array("files"), async (req, res) => {
+  console.log(req.files)
+
+  res.status(200).send({message: 'ok'})
+})
 
 server.listen(PORT, async () => {
+  try {
+    await db.authenticate();
+    await db.sync();
+
+    io.on("connection", (socket) => {
       socket.on("joinRoom", async ({ chatId, userName }) => {
         const chat = await ChatService.createChat(socket, chatId, userName);
         const messagesData = await chat.getMessages();
-
+    
         const messages = messagesData.map( (m) => {
           return {
             id: m.id,
@@ -44,9 +60,9 @@ server.listen(PORT, async () => {
             time: m.createdAt
           }
         })
-
+    
         socket.emit('fetchedData', messages)
-
+    
       });
 
       socket.on("upload", (files, callback) => {
@@ -65,14 +81,14 @@ server.listen(PORT, async () => {
           const sender = await User.findOrCreate({ where: { name: data.author } });
           const senderId = sender.id;
           const chatId = data.chatId;
-
+      
           const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
           const newMessage = await Message.create({content: data.msg, type: data.type, senderId, senderName: data.author, chatId})
           console.log(data.chatId)
-
+          
           socket.broadcast.emit("rcvMsg", data);
           await ChatService.addMessageToChat(chat, newMessage)
-
+    
         } catch (e) {
           console.log(e)
         }
@@ -82,3 +98,9 @@ server.listen(PORT, async () => {
         console.log("user disconnected", socket.id);
       });
     });
+
+    console.log("server runnig");
+  } catch (e) {
+    console.log(e.message);
+  }
+});

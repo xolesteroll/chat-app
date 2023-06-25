@@ -23,34 +23,44 @@ function Chat({ socket, userName, chatId, exit }) {
 
   useEffect(() => {
     if (files.length) {
-      setIsFileMsg(true);
-
-      const filesNames = files.map((file) => {
-        console.log(file) 
-        return file.name
-      });
-      
-      setFileNames((prevNames) => [...prevNames, ...filesNames]);
+      // const filesNames = files.map((file) => {
+      //   console.log(file)
+      //   return file.name
+      // });
+      // setFileNames((prevNames) => [...prevNames, ...filesNames]);
     } else {
       setIsFileMsg(false);
     }
-
   }, [files, files.length]);
 
   const handleFileChange = (e) => {
-    let files = []
-    for(const key in e.target.files) {
-      files.push(e.target.files[key])
+    if (e.target.files?.length) {
+      setIsFileMsg(true);
+      setFiles((prevFiles) => [...prevFiles, ...e.target.files]);
     }
-
-    setFiles((prevFiles) => [...prevFiles, files]);
+    // for(const key in e.target.files) {
+    //   files.push(e.target.files[key])
+    // }
   };
 
   const sendMsg = async (msgData) => {
-    await socket.emit("upload", files, (status) => {
-      console.log(status);
-    });
+    console.log(files)
+    if (files.length) {
+      const formData = new FormData();
+      files.forEach(file => {
+        formData.append('files', file)
+      })
 
+      console.log(formData.get('files'))
+  
+      formData.append("uploadedFiles", files);
+      const response = await fetch("http://localhost:3001/upload-files", {
+        method: "POST",
+        body: formData
+      });
+
+      console.log(await response.json())
+    }
     await socket.emit("sendMsg", msgData);
   };
 
@@ -127,9 +137,9 @@ function Chat({ socket, userName, chatId, exit }) {
         <input type="file" multiple={true} onChange={handleFileChange} />
       </div>
       <div className="buttons">
-      <button onClick={disconnectChat}>Exit</button>
+        <button onClick={disconnectChat}>Exit</button>
 
-      <button onClick={sendMsgHandler}>Send</button>
+        <button onClick={sendMsgHandler}>Send</button>
       </div>
     </div>
   );
