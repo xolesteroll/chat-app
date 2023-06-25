@@ -119,7 +119,7 @@ server.listen(PORT, async () => {
               const uploadedFile = await File.findByPk(data.filesIds[i]);
               await newMessage.addFile(uploadedFile);
 
-              data.file.push({
+              data.files.push({
                 name: uploadedFile.name,
                 url: "http://localhost:3001/" + uploadedFile.path,
               });
