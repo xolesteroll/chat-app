@@ -11,6 +11,7 @@ const { Chat } = require("./models");
 const { User } = require("./models");
 const { Message } = require("./models");
 const ChatService = require("./services/ChatService");
+const {createFile} = require("./services/FilesService");
 const upload = require("./multer.js");
 
 const PORT = process.env.PORT || 3001;
@@ -31,9 +32,26 @@ const io = new Server(server, {
 });
 
 app.post('/upload-files', upload.array("files"), async (req, res) => {
-  console.log(req.files)
+  try {
+    const uploadedFiles = req.files
+    console.log(uploadedFiles)
+  
+    const filesIds = []
+  
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const newFile = createFile(uploadedFiles[i])
+      console.log(newFile)
+  
+      filesIds.push(newFile.id)
+    }
+  
+  
+    res.status(200).send({message: 'ok', filesIds})
+  } catch (e) {
+    res.status(500).send({message: e.message})
 
-  res.status(200).send({message: 'ok'})
+  }
+  
 })
 
 server.listen(PORT, async () => {
@@ -58,7 +76,6 @@ server.listen(PORT, async () => {
         })
     
         socket.emit('fetchedData', messages)
-    
       });
 
       socket.on("upload", (files, callback) => {

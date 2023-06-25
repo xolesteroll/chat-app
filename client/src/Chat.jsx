@@ -50,10 +50,7 @@ function Chat({ socket, userName, chatId, exit }) {
       files.forEach(file => {
         formData.append('files', file)
       })
-
-      console.log(formData.get('files'))
-  
-      formData.append("uploadedFiles", files);
+      
       const response = await fetch("http://localhost:3001/upload-files", {
         method: "POST",
         body: formData
