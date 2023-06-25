@@ -4,9 +4,9 @@ function Chat({ socket, userName, chatId, exit }) {
   const [msg, setMsg] = useState("");
   const [msgList, setMsgList] = useState([]);
   const [files, setFiles] = useState([]);
-  const [fileNames, setFileNames] = useState([]);
   const [isFileMsg, setIsFileMsg] = useState(false);
 
+  const fileInput = useRef();
   const textInput = useRef();
 
   useEffect(() => {
@@ -21,44 +21,40 @@ function Chat({ socket, userName, chatId, exit }) {
     });
   }, [socket]);
 
-  useEffect(() => {
-    if (files.length) {
-      // const filesNames = files.map((file) => {
-      //   console.log(file)
-      //   return file.name
-      // });
-      // setFileNames((prevNames) => [...prevNames, ...filesNames]);
-    } else {
-      setIsFileMsg(false);
-    }
-  }, [files, files.length]);
-
   const handleFileChange = (e) => {
     if (e.target.files?.length) {
       setIsFileMsg(true);
       setFiles((prevFiles) => [...prevFiles, ...e.target.files]);
+    } else {
+      setIsFileMsg(false);
     }
-    // for(const key in e.target.files) {
-    //   files.push(e.target.files[key])
-    // }
   };
 
   const sendMsg = async (msgData) => {
-    console.log(files)
-    if (files.length) {
-      const formData = new FormData();
-      files.forEach(file => {
-        formData.append('files', file)
-      })
-      
-      const response = await fetch("http://localhost:3001/upload-files", {
-        method: "POST",
-        body: formData
-      });
+    try {
+      if (files.length) {
+        const formData = new FormData();
+        files.forEach((file) => {
+          formData.append("files", file);
+        });
 
-      console.log(await response.json())
+        const response = await fetch("http://localhost:3001/upload-files", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        const filesIds = data.filesIds;
+
+        msgData.filesIds = filesIds;
+      }
+
+      await socket.emit("sendMsg", msgData);
+      fileInput.files = [];
+      setIsFileMsg(false);
+    } catch (e) {
+      console.log(e.message);
     }
-    await socket.emit("sendMsg", msgData);
   };
 
   const sendMsgHandler = async () => {
@@ -70,14 +66,11 @@ function Chat({ socket, userName, chatId, exit }) {
           author: userName,
           time: new Date().toISOString(),
           msg: msg,
-          fileNames,
         };
 
         textInput.current.value = "";
         setMsgList((msgList) => [...msgList, msgData]);
         await sendMsg(msgData);
-
-        console.log(msgList);
       }
     } catch (e) {
       console.log(e);
@@ -108,10 +101,14 @@ function Chat({ socket, userName, chatId, exit }) {
               <span className="message-content">
                 <span className="message-text">{msgData.msg}</span>
 
-                {(isFileMsg && fileNames.length) ?? (
-                  <ul className="file-names">
-                    {fileNames.map((fn) => {
-                      <li className="file-name">{fn}</li>;
+                {(msgData.files && msgData.files.length > 0) && (
+                  <ul className="file-names">                  
+                    {msgData.files.map((f) => {
+                      return (
+                      <li key={f.name + Math.random()} className="file-name">
+                        <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a>
+                      </li> 
+                      );
                     })}
                   </ul>
                 )}
@@ -131,7 +128,12 @@ function Chat({ socket, userName, chatId, exit }) {
           onChange={(e) => setMsg(e.target.value)}
           ref={textInput}
         />
-        <input type="file" multiple={true} onChange={handleFileChange} />
+        <input
+          ref={fileInput}
+          type="file"
+          multiple={true}
+          onChange={handleFileChange}
+        />
       </div>
       <div className="buttons">
         <button onClick={disconnectChat}>Exit</button>

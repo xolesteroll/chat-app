@@ -1,5 +1,5 @@
 require("dotenv").config();
-const path = require("path")
+const path = require("path");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -12,16 +12,16 @@ const { User } = require("./models");
 const { Message } = require("./models");
 const { File } = require("./models");
 const ChatService = require("./services/ChatService");
-const {createFile} = require("./services/FilesService");
+const { createFile } = require("./services/FilesService");
 const upload = require("./multer.js");
 
 const PORT = process.env.PORT || 3001;
 
 const app = express();
 
-app.use(cors())
-app.use(express.json())
-app.use(express.static('uploads'))
+app.use(cors());
+app.use(express.json());
+app.use(express.static("uploads"));
 
 const server = http.createServer(app);
 
@@ -32,26 +32,22 @@ const io = new Server(server, {
   },
 });
 
-app.post('/upload-files', upload.array("files"), async (req, res) => {
+app.post("/upload-files", upload.array("files"), async (req, res) => {
   try {
-    const uploadedFiles = req.files
-    console.log(uploadedFiles)
-  
-    const filesIds = []
-  
-    for (let i = 0; i < uploadedFiles.length; i++) {
-      const newFile = await createFile(uploadedFiles[i])
-      filesIds.push(newFile.id)
-    }
-  
-  
-    res.status(200).send({message: 'ok', filesIds})
-  } catch (e) {
-    res.status(500).send({message: e.message})
+    const uploadedFiles = req.files;
 
+    const filesIds = [];
+
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const newFile = await createFile(uploadedFiles[i]);
+      filesIds.push(newFile.id);
+    }
+
+    res.status(200).send({ message: "ok", filesIds });
+  } catch (e) {
+    res.status(500).send({ message: e.message });
   }
-  
-})
+});
 
 server.listen(PORT, async () => {
   try {
@@ -60,48 +56,83 @@ server.listen(PORT, async () => {
 
     io.on("connection", (socket) => {
       socket.on("joinRoom", async ({ chatId, userName }) => {
-        const chat = await ChatService.createChat(socket, chatId, userName);
-        const messagesData = await chat.getMessages();
-    
-        const messages = messagesData.map( (m) => {
-          return {
-            id: m.id,
-            chatId: +m.chatId,
-            type: m.type,
-            author: m.senderName,
-            msg: m.content,
-            time: m.createdAt
+        try {
+          const chat = await ChatService.createChat(socket, chatId, userName);
+          const messagesData = await chat.getMessages({ include: ["Files"] });
+          const messages = [];
+
+          for (let i = 0; i < messagesData.length; i++) {
+            const m = messagesData[i];
+            const files = await m.getFiles()
+            const filesData = files.map((f) => ({
+              name: f.name,
+              url: "http://localhost:3001/" + f.path,
+            }))
+
+            const messageObj = {
+              id: m.id,
+              chatId: +m.chatId,
+              type: m.type,
+              author: m.senderName,
+              msg: m.content,
+              time: m.createdAt,
+              files: (filesData && filesData.length > 0) ? filesData : [],
+            };
+
+            messages.push(messageObj);
           }
-        })
-    
-        socket.emit('fetchedData', messages)
+          // const messages = messagesData.map(async (m) => {
+          //   return
+          // });
+
+          socket.emit("fetchedData", messages);
+        } catch (e) {
+          console.log(e.message);
+        }
       });
 
       socket.on("sendMsg", async (data) => {
         try {
-          const sender = await User.findOrCreate({ where: { name: data.author } });
+          const sender = await User.findOrCreate({
+            where: { name: data.author },
+          });
           const senderId = sender.id;
           const chatId = data.chatId;
-      
-          const chat = await Chat.findOne({where: {socketRoomId: chatId}, include: ['Messages']})
-          const newMessage = await Message.create({content: data.msg, type: data.type, senderId, senderName: data.author, chatId})
-          console.log(data.chatId)
-          
-          if (data.filesIds.length) {
+
+          const chat = await Chat.findOne({
+            where: { socketRoomId: chatId },
+            include: ["Messages"],
+          });
+          const newMessage = await Message.create({
+            content: data.msg,
+            type: data.type,
+            senderId,
+            senderName: data.author,
+            chatId,
+          });
+          console.log(data.filesIds);
+
+          if (data.filesIds && data.filesIds.length > 0) {
+            data.files = [];
+
             for (let i = 0; i < data.filesIds.length; i++) {
               const uploadedFile = await File.findByPk(data.filesIds[i]);
-              await newMessage.addFile(uploadedFile)
+              await newMessage.addFile(uploadedFile);
+
+              data.file.push({
+                name: uploadedFile.name,
+                url: "http://localhost:3001/" + uploadedFile.path,
+              });
             }
           }
 
           socket.broadcast.emit("rcvMsg", data);
-          await ChatService.addMessageToChat(chat, newMessage)
-    
+          await ChatService.addMessageToChat(chat, newMessage);
         } catch (e) {
-          console.log(e)
+          console.log(e);
         }
       });
-    
+
       socket.on("disconnect", () => {
         console.log("user disconnected", socket.id);
       });
