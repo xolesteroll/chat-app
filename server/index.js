@@ -10,6 +10,7 @@ const db = require("./db");
 const { Chat } = require("./models");
 const { User } = require("./models");
 const { Message } = require("./models");
+const { File } = require("./models");
 const ChatService = require("./services/ChatService");
 const {createFile} = require("./services/FilesService");
 const upload = require("./multer.js");
@@ -39,9 +40,7 @@ app.post('/upload-files', upload.array("files"), async (req, res) => {
     const filesIds = []
   
     for (let i = 0; i < uploadedFiles.length; i++) {
-      const newFile = createFile(uploadedFiles[i])
-      console.log(newFile)
-  
+      const newFile = await createFile(uploadedFiles[i])
       filesIds.push(newFile.id)
     }
   
@@ -78,17 +77,6 @@ server.listen(PORT, async () => {
         socket.emit('fetchedData', messages)
       });
 
-      socket.on("upload", (files, callback) => {
-        console.log(files)
-        for (let key in files[0]) {
-          console.log(files[0][key])
-          const fileName = `file_${key}`
-          // writeFileSync("/uploads", files[0][key], (err) => {
-          //   callback({message: err ? "failure" : "success"})
-          // })
-        }
-      })
-    
       socket.on("sendMsg", async (data) => {
         try {
           const sender = await User.findOrCreate({ where: { name: data.author } });
@@ -99,6 +87,13 @@ server.listen(PORT, async () => {
           const newMessage = await Message.create({content: data.msg, type: data.type, senderId, senderName: data.author, chatId})
           console.log(data.chatId)
           
+          if (data.filesIds.length) {
+            for (let i = 0; i < data.filesIds.length; i++) {
+              const uploadedFile = await File.findByPk(data.filesIds[i]);
+              await newMessage.addFile(uploadedFile)
+            }
+          }
+
           socket.broadcast.emit("rcvMsg", data);
           await ChatService.addMessageToChat(chat, newMessage)
     
