@@ -50,7 +50,7 @@ const Message = sequelize.define("Message", {
     type: DataTypes.ENUM("text", "file"),
     allowNull: false,
   },
-  filename: {
+  files: {
     type: DataTypes.STRING,
     allowNull: true,
   },
@@ -59,6 +59,18 @@ const Message = sequelize.define("Message", {
     allowNull: true,
   },
 });
+
+const File = sequelize.define("File", {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  }
+})
 
 
 // Chat.belongsToMany(User, { through: 'UserChat' });
@@ -70,8 +82,12 @@ Message.belongsTo(Chat);
 User.hasMany(Message, { foreignKey: "senderId" });
 Message.belongsTo(User);
 
+Message.hasMany(File, {foreignKey: "messageId"});
+File.belongsTo(Message)
+
 module.exports = {
   Message,
   User,
   Chat,
+  File
 };

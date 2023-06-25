@@ -1,6 +1,5 @@
 require("dotenv").config();
 const path = require("path")
-const { writeFileSync } = require("fs");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -8,14 +7,11 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const db = require("./db");
 
-const uuid = require("uuid")
-
 const { Chat } = require("./models");
 const { User } = require("./models");
 const { Message } = require("./models");
 const ChatService = require("./services/ChatService");
-const MessagesService = require("./services/MessageService");
-const upload = require("./services/FilesService");
+const upload = require("./multer.js");
 
 const PORT = process.env.PORT || 3001;
 
