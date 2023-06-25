@@ -50,10 +50,6 @@ const Message = sequelize.define("Message", {
     type: DataTypes.ENUM("text", "file"),
     allowNull: false,
   },
-  files: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
   filepath: {
     type: DataTypes.STRING,
     allowNull: true,
