@@ -11,12 +11,12 @@ function Chat({ socket, userName, chatId, exit }) {
 
   useEffect(() => {
     socket.on("rcvMsg", (data) => {
-      console.log(data);
+      // console.log(data);
       setMsgList((msgList) => [...msgList, data]);
     });
 
     socket.on("fetchedData", (messages) => {
-      console.log(messages);
+      // console.log(messages);
       setMsgList((msgList) => [...msgList, ...messages]);
     });
   }, [socket]);

@@ -116,16 +116,17 @@ server.listen(PORT, async () => {
           if (data.filesIds && data.filesIds.length > 0) {
             for (let i = 0; i < data.filesIds.length; i++) {
               const uploadedFile = await File.findByPk(data.filesIds[i]);
-              await newMessage.addFile(uploadedFile);
-
+              console.log(uploadedFile)
               data.files.push({
                 name: uploadedFile.name,
                 url: "http://localhost:3001/" + uploadedFile.path,
               });
+
+              await newMessage.addFile(uploadedFile);
             }
           }
 
-          socket.to(chatId).emit("rcvMsg", data);
+          socket.emit("rcvMsg", data);
           await ChatService.addMessageToChat(chat, newMessage);
         } catch (e) {
           console.log(e);
