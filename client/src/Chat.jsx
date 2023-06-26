@@ -25,6 +25,7 @@ function Chat({ socket, userName, chatId, exit }) {
     if (e.target.files?.length) {
       setIsFileMsg(true);
       setFiles((prevFiles) => [...prevFiles, ...e.target.files]);
+
     } else {
       setIsFileMsg(false);
     }
@@ -50,7 +51,6 @@ function Chat({ socket, userName, chatId, exit }) {
       }
 
       await socket.emit("sendMsg", msgData);
-      fileInput.files = [];
       setIsFileMsg(false);
     } catch (e) {
       console.log(e.message);
@@ -106,7 +106,7 @@ function Chat({ socket, userName, chatId, exit }) {
                     {msgData.files.map((f) => {
                       return (
                       <li key={f.name + Math.random()} className="file-name">
-                        <a href={f.url} target="_blank" rel="noreferrer">{f.name}</a>
+                        <a href={f.url} target="_blank" rel="noreferrer" title={`Click to download file? ${f.name}`} download>{f.name}</a>
                       </li> 
                       );
                     })}

@@ -125,7 +125,7 @@ server.listen(PORT, async () => {
             }
           }
 
-          socket.broadcast.emit("rcvMsg", data);
+          socket.to(chatId).emit("rcvMsg", data);
           await ChatService.addMessageToChat(chat, newMessage);
         } catch (e) {
           console.log(e);
