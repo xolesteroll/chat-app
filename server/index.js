@@ -1,8 +1,8 @@
 require("dotenv").config();
-const path = require("path");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
+const path = require("path");
 
 const { Server } = require("socket.io");
 const db = require("./db");
@@ -21,7 +21,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static("uploads"));
+app.use("/uploads", express.static(path.resolve(__dirname, "uploads")));
 
 const server = http.createServer(app);
 
@@ -63,11 +63,11 @@ server.listen(PORT, async () => {
 
           for (let i = 0; i < messagesData.length; i++) {
             const m = messagesData[i];
-            const files = await m.getFiles()
+            const files = await m.getFiles();
             const filesData = files.map((f) => ({
               name: f.name,
               url: "http://localhost:3001/" + f.path,
-            }))
+            }));
 
             const messageObj = {
               id: m.id,
@@ -76,7 +76,7 @@ server.listen(PORT, async () => {
               author: m.senderName,
               msg: m.content,
               time: m.createdAt,
-              files: (filesData && filesData.length > 0) ? filesData : [],
+              files: filesData && filesData.length > 0 ? filesData : [],
             };
 
             messages.push(messageObj);
@@ -111,10 +111,9 @@ server.listen(PORT, async () => {
             chatId,
           });
           console.log(data.filesIds);
+          data.files = [];
 
           if (data.filesIds && data.filesIds.length > 0) {
-            data.files = [];
-
             for (let i = 0; i < data.filesIds.length; i++) {
               const uploadedFile = await File.findByPk(data.filesIds[i]);
               await newMessage.addFile(uploadedFile);
