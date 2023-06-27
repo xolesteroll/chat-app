@@ -27,7 +27,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: ["https://skynet.pw", "http://localhost:5173", "http://localhost:5174"],
     methods: ["GET", "POST"],
   },
 });
@@ -117,12 +117,15 @@ server.listen(PORT, async () => {
             for (let i = 0; i < data.filesIds.length; i++) {
               const uploadedFile = await File.findByPk(data.filesIds[i]);
               console.log(uploadedFile)
-              data.files.push({
-                name: uploadedFile.name,
-                url: "http://localhost:3001/" + uploadedFile.path,
-              });
+              if (uploadedFile) {
+                data.files.push({
+                  name: uploadedFile.name,
+                  url: "http://localhost:3001/" + uploadedFile.path,
+                });
+  
+                await newMessage.addFile(uploadedFile);
 
-              await newMessage.addFile(uploadedFile);
+              }
             }
           }
 
